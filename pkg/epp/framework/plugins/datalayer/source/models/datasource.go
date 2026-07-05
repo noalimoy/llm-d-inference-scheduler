@@ -34,7 +34,7 @@ type modelsDatasourceParams struct {
 // InsecureSkipVerify defaults to true (matching the factory default).
 // Use this function directly in tests to bypass JSON parameter marshaling.
 func NewHTTPModelsDataSource(scheme, path, name string) (*http.HTTPDataSource[*extmodels.ModelResponse], error) {
-	return http.NewHTTPDataSource(scheme, path, defaultModelsInsecureSkipVerify,
+	return http.NewHTTPDataSource(scheme, path, 0, defaultModelsInsecureSkipVerify,
 		ModelsDataSourceType, name, parseModels)
 }
 
@@ -51,7 +51,7 @@ func ModelDataSourceFactory(name string, parameters *json.Decoder, _ plugin.Hand
 		return nil, fmt.Errorf("unsupported scheme: %s", cfg.Scheme)
 	}
 
-	ds, err := http.NewHTTPDataSource(cfg.Scheme, cfg.Path, cfg.InsecureSkipVerify,
+	ds, err := http.NewHTTPDataSource(cfg.Scheme, cfg.Path, 0, cfg.InsecureSkipVerify,
 		ModelsDataSourceType, name, parseModels)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create HTTP data source: %w", err)

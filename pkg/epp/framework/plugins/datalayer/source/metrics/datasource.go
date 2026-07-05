@@ -54,7 +54,7 @@ type metricsDatasourceParams struct {
 // InsecureSkipVerify defaults to true (matching the factory default).
 // Use this function directly in tests to bypass JSON parameter marshaling.
 func NewHTTPMetricsDataSource(scheme, path, name string) (*http.HTTPDataSource[PrometheusMetricMap], error) {
-	return http.NewHTTPDataSource(scheme, path, defaultMetricsInsecureSkipVerify,
+	return http.NewHTTPDataSource(scheme, path, 0, defaultMetricsInsecureSkipVerify,
 		MetricsDataSourceType, name, parseMetrics)
 }
 
@@ -72,7 +72,7 @@ func MetricsDataSourceFactory(name string, parameters *json.Decoder, handle fwkp
 		}
 	}
 
-	return http.NewHTTPDataSource(cfg.Scheme, cfg.Path, cfg.InsecureSkipVerify,
+	return http.NewHTTPDataSource(cfg.Scheme, cfg.Path, 0, cfg.InsecureSkipVerify,
 		MetricsDataSourceType, name, parseMetrics)
 }
 

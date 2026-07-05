@@ -22,11 +22,13 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"net/url"
 	"reflect"
 	"runtime/debug"
 	"slices"
+	"strconv"
 	"sync"
 	"time"
 
@@ -50,6 +52,11 @@ type HTTPDataSource[T any] struct {
 	typedName fwkplugin.TypedName
 	scheme    string
 	path      string
+	// portOverride, when non-zero, replaces the port in the endpoint's
+	// MetricsHost with this value. This allows a source to target a
+	// different port on the same pod (e.g. DCGM Exporter on :9400)
+	// without changing the endpoint metadata set by the discovery layer.
+	portOverride int
 
 	client Client
 	// parser converts the response body to T. MUST NOT return (zero, nil) for nilable T;
@@ -61,7 +68,9 @@ type HTTPDataSource[T any] struct {
 }
 
 // NewHTTPDataSource constructs a typed polling dispatcher.
-func NewHTTPDataSource[T any](scheme, path string, skipCertVerification bool,
+// portOverride, when non-zero, makes the source scrape podIP:portOverride
+// instead of the endpoint's MetricsHost.
+func NewHTTPDataSource[T any](scheme, path string, portOverride int, skipCertVerification bool,
 	pluginType, pluginName string, parser func(io.Reader) (T, error)) (*HTTPDataSource[T], error) {
 	if scheme != "http" && scheme != "https" {
 		return nil, fmt.Errorf("unsupported scheme: %s", scheme)
@@ -78,11 +87,12 @@ func NewHTTPDataSource[T any](scheme, path string, skipCertVerification bool,
 		cl.Transport = httpsTransport
 	}
 	return &HTTPDataSource[T]{
-		typedName: fwkplugin.TypedName{Type: pluginType, Name: pluginName},
-		scheme:    scheme,
-		path:      path,
-		client:    cl,
-		parser:    parser,
+		typedName:    fwkplugin.TypedName{Type: pluginType, Name: pluginName},
+		scheme:       scheme,
+		path:         path,
+		portOverride: portOverride,
+		client:       cl,
+		parser:       parser,
 	}, nil
 }
 
@@ -170,5 +180,9 @@ func (s *HTTPDataSource[T]) AppendExtractor(ext fwkplugin.Plugin) error {
 }
 
 func (s *HTTPDataSource[T]) getEndpoint(ep Addressable) *url.URL {
-	return &url.URL{Scheme: s.scheme, Host: ep.GetMetricsHost(), Path: s.path}
+	host := ep.GetMetricsHost()
+	if s.portOverride > 0 {
+		host = net.JoinHostPort(ep.GetIPAddress(), strconv.Itoa(s.portOverride))
+	}
+	return &url.URL{Scheme: s.scheme, Host: host, Path: s.path}
 }
