@@ -103,6 +103,7 @@ import (
 	"github.com/llm-d/llm-d-router/pkg/epp/framework/plugins/requesthandling/parsers/vllmgrpc"
 	"github.com/llm-d/llm-d-router/pkg/epp/framework/plugins/requesthandling/parsers/vllmhttp"
 	"github.com/llm-d/llm-d-router/pkg/epp/framework/plugins/scheduling/filter/bylabel"
+	filtergpuutil "github.com/llm-d/llm-d-router/pkg/epp/framework/plugins/scheduling/filter/gpuutilization"
 	"github.com/llm-d/llm-d-router/pkg/epp/framework/plugins/scheduling/filter/prefixcacheaffinity"
 	sessionaffinityfilter "github.com/llm-d/llm-d-router/pkg/epp/framework/plugins/scheduling/filter/sessionaffinity"
 	"github.com/llm-d/llm-d-router/pkg/epp/framework/plugins/scheduling/filter/sloheadroomtier"
@@ -114,6 +115,7 @@ import (
 	"github.com/llm-d/llm-d-router/pkg/epp/framework/plugins/scheduling/profilehandler/single"
 	"github.com/llm-d/llm-d-router/pkg/epp/framework/plugins/scheduling/scorer/activerequest"
 	"github.com/llm-d/llm-d-router/pkg/epp/framework/plugins/scheduling/scorer/contextlengthaware"
+	scorergpuutil "github.com/llm-d/llm-d-router/pkg/epp/framework/plugins/scheduling/scorer/gpuutilization"
 	"github.com/llm-d/llm-d-router/pkg/epp/framework/plugins/scheduling/scorer/kvcacheutilization"
 	latencyscorer "github.com/llm-d/llm-d-router/pkg/epp/framework/plugins/scheduling/scorer/latency"
 	"github.com/llm-d/llm-d-router/pkg/epp/framework/plugins/scheduling/scorer/loadaware"
@@ -500,6 +502,10 @@ func (r *Runner) registerInTreePlugins() {
 	// data layer DCGM source/extractor
 	fwkplugin.Register(srcdcgm.DCGMDataSourceType, srcdcgm.DCGMDataSourceFactory)
 	fwkplugin.Register(attrgpu.DCGMExtractorType, extdcgm.DCGMExtractorFactory)
+
+	// GPU utilization filter/scorer
+	fwkplugin.Register(filtergpuutil.PluginType, filtergpuutil.Factory)
+	fwkplugin.Register(scorergpuutil.PluginType, scorergpuutil.Factory)
 
 	fwkplugin.Register(prefix.PrefixCacheScorerPluginType, prefix.PrefixCachePluginFactory)
 	fwkplugin.Register(maxscore.MaxScorePickerType, maxscore.MaxScorePickerFactory)
